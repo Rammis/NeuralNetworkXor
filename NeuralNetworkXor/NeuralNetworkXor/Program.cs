@@ -4,135 +4,115 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 
-namespace NeuralNetworkXor
+namespace Test
 {
     class Program
     {
         static void Main(string[] args)
         {
-            int[,] inputsData = new int[,] { { 1, 0,0,0 },{0,0,1,0},{0,0,0,1},{0,1,0,0}};
-            int[,] expectedOutputData = new int[,] { { 0,0,0,1 }, {0,0,1,0}, { 0,1,0,0 }, {1,0,0,0} };
+
+
             Random random = new Random();
-            double[,] firstLayerWeights = new double[4, 5]; //[X,0] for bias
-            double[,] secondLayerWeights = new double[4, 5]; //[X,0] for bias
-            int chosenInputs;
-            int[] inputsFirstLayer = new int[5];
-            inputsFirstLayer[0] = 1;
-            int[] inputsSecondLayer = new int[5];
-            double[] firstLayerSum = new double[4];
-            double[] secondLayerSum = new double[4];
-            double[] firstLayerSumActivate = new double[5];
-            firstLayerSumActivate[0] = 1; //bias
-            double loss = 0;
-            
-            double[] probabilities = new double[4];
-            double[] outputErrors = new double[4];
-            double[,] deltaSecondLayer = new double[4, 5]; //without bias
-            double[,] deltaFirstLayer = new double[4, 5]; //without bias
-            double sum = 0;
-            double learningrate = 0.1F;
+            float[,] inputs = new float[,] { { 60, 0, 0 }, { 0, 100, 0 }, { 0, 0, 40 } };
+            float[,] outputs = new float[,] { { 1, 1, 0 }, { 0, 0, 1 }, { 1, 0, 1 } };
+            float learningrate = 0.1f;
+            int iterations = 1000;
 
-            for (int i = 0; i < 4; i++)
-                for (int j = 0; j < 5; j++)
+
+
+            float[,] Wxh = new float[4, 3];
+            float[,] Why = new float[4, 3];
+            int t, i, h, o;
+
+
+            for (i = 0; i < 4; i++)
+                for (int j = 0; j < 3; j++)
                 {
-                    firstLayerWeights[i, j] = random.NextDouble() * (0.1 + 0.1) - 0.1;
-                    Thread.Sleep(5);
+                    Wxh[i, j] = Convert.ToSingle(random.NextDouble() * (0.1 + 0.1) - 0.1);
+                    Thread.Sleep(1);
                 }
-            for(int i=0;i<2;i++)
-                for (int j = 0; j < 5; j++)
+            for (i = 0; i < 4; i++)
+                for (int j = 0; j < 3; j++)
                 {
-                    secondLayerWeights[i, j] = random.NextDouble() * (0.1 + 0.1) - 0.1;
-                    Thread.Sleep(5);
+                    Why[i, j] = Convert.ToSingle(random.NextDouble() * (0.1 + 0.1) - 0.1);
+                    Thread.Sleep(1);
                 }
 
+            float loss, sum; //for storing the loss
 
 
-            for (int l = 0; l < 10000; l++)
+            float[] x = new float[4];
+            float[] y = new float[3];
+            float[] zhWeightedSums = new float[3];
+            float[] hActivationValues = new float[4];
+            float[] zyWeightedSums = new float[4];
+            float[] probabilities = new float[3];
+            float[] outputErrors = new float[3];
+            float[,] deltaWxh = new float[4, 3];
+            float[,] deltaWhy = new float[4, 3];
+
+
+
+
+
+            for (t = 0; t < iterations; t++)
             {
-                chosenInputs = l % 4;
-
-               
-                for (int i = 1; i < 5; i++)
-                    inputsFirstLayer[i] = inputsData[chosenInputs, i - 1];
-
-                for (int i = 0; i < 4; i++)
-                {
-                    firstLayerSum[i] = 0;
-                    for (int j = 0; j < 5; j++)
-                        firstLayerSum[i] += inputsFirstLayer[j] * firstLayerWeights[i, j];
-
-                    firstLayerSumActivate[i + 1] = Math.Tanh(firstLayerSum[i]);
-
-                }
-                firstLayerSumActivate[0] = 1;
-
-                for (int i = 0; i < 4; i++)
-                {
-                    secondLayerSum[i] = 0;
-                    for (int j = 0; j < 5; j++)
-                        secondLayerSum[i] += firstLayerSumActivate[i] * secondLayerWeights[i, j];
 
 
-                }
+                for (i = 1; i < 3; i++)
+                    x[i] = inputs[t % 3, i - 1];
+                x[0] = 1;
 
-                sum = 0;
-                for (int i = 0; i < 4; i++)
-                {
-                    probabilities[i] = Math.Exp(secondLayerSum[i]);
-                    sum += probabilities[i];
-                }
-
-                for (int i = 0; i < 4; i++)
-                    probabilities[i] /= sum;
+                for (i = 0; i < 3; i++)
+                    y[i] = outputs[t % 3, i];
 
 
-                for (int i = 0; i < 4; i++)
-                    outputErrors[i] = probabilities[i] - expectedOutputData[chosenInputs, i];
-                loss = 0;
-                for (int o = 0; o < 4; o++) loss -= expectedOutputData[chosenInputs,o] * Math.Log(probabilities[o]); //the loss
 
-                Console.WriteLine(l + ": " + loss);
+                for (i = 0; i < 3; i++)
+                    zhWeightedSums[i] = 0;
+                for (h = 0; h < 3; h++) for (i = 0; i < 3 + 1; i++) zhWeightedSums[h] += x[i] * Wxh[i, h];
 
-                for (int i = 0; i < 4; i++)
-                {
-                    for (int j = 0; j < 5; j++)
-                        deltaSecondLayer[i, j] = firstLayerSumActivate[j] * outputErrors[i];
-                }
+                hActivationValues[0] = 1;
+                for (h = 0; h < 3; h++) hActivationValues[h + 1] = Convert.ToSingle(Math.Tanh(zhWeightedSums[h]));
+                for (i = 0; i < 4; i++)
+                    zyWeightedSums[i] = 0;
 
-                for (int i = 0; i < 5; i++)
-                    firstLayerSumActivate[i] = 0;
+                for (o = 0; o < 3; o++) for (h = 0; h < 3 + 1; h++) zyWeightedSums[o] += hActivationValues[h] * Why[h, o];
 
-                for (int i = 0; i < 4; i++)
-                {
-                    for (int j = 1; j < 5; j++)
-                        firstLayerSumActivate[j] += deltaSecondLayer[i, j] * outputErrors[i];
-                }
+                for (sum = 0, o = 0; o < 3; o++) { probabilities[o] = Convert.ToSingle(Math.Exp(zyWeightedSums[o])); sum += probabilities[o]; }
 
-                for (int i = 0; i < 4; i++)
-                {
-                    firstLayerSum[i] = firstLayerSumActivate[i + 1] * (1 - Math.Pow(Math.Tanh(firstLayerSum[i]), 2));
-                }
+                Console.WriteLine(probabilities[0] + " " + probabilities[1] + " " + probabilities[2]);
+                for (o = 0; o < 3; o++) outputErrors[o] = probabilities[o] - y[o];
 
-                for (int i = 0; i < 4; i++)
-                    for (int j = 0; j < 5; j++)
-                        deltaFirstLayer[i, j] = inputsFirstLayer[j] * firstLayerSum[i];
+                for (loss = 0, o = 0; o < 3; o++) loss -= y[o] * Convert.ToSingle(Math.Log(probabilities[o]));
+                Console.WriteLine(loss);
 
 
-               
 
-                for (int i = 0; i < 4; i++)
-                    for (int j = 0; j < 5; j++)
-                        firstLayerWeights[i, j] -= learningrate * deltaFirstLayer[i, j];
-
-                for (int i = 0; i < 4; i++)
-                    for (int j = 0; j < 5; j++)
-                        secondLayerWeights[i, j] -= learningrate * deltaSecondLayer[i, j];
+                for (h = 0; h < 3 + 1; h++) for (o = 0; o < 3; o++) deltaWhy[h, o] = hActivationValues[h] * outputErrors[o];
 
 
-                
+
+                for (i = 0; i < 4; i++)
+                    hActivationValues[i] = 0;
+
+                for (h = 1; h < 3 + 1; h++) for (o = 0; o < 3; o++) hActivationValues[h] += Why[h, o] * outputErrors[o];
+
+                for (h = 0; h < 3; h++) zhWeightedSums[h] = hActivationValues[h + 1] * (1 - Convert.ToSingle(Math.Pow(Math.Tanh(zhWeightedSums[h]), 2)));
+
+
+                for (i = 0; i < 3 + 1; i++) for (h = 0; h < 3; h++) deltaWxh[i, h] = x[i] * zhWeightedSums[h];
+
+
+                for (h = 0; h < 3 + 1; h++) for (o = 0; o < 3; o++) Why[h, o] -= learningrate * deltaWhy[h, o];
+                for (i = 0; i < 3 + 1; i++) for (h = 0; h < 3; h++) Wxh[i, h] -= learningrate * deltaWxh[i, h];
+
+
             }
 
             Console.ReadKey();
-           }
+
+        }
+
     }
 }
