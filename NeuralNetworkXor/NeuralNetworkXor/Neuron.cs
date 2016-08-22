@@ -11,8 +11,6 @@ namespace NeuralNetworkXor
         double[] inputs { get; set; }
         double[] weights { get; set;}
         double sumWeightedOutputs;
-        double activateOutput;
-
         public Neuron(double[] inputs, double[] weights)
         {
             this.inputs = inputs;
